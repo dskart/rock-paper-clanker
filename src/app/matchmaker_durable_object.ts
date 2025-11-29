@@ -137,7 +137,12 @@ export class MatchmakerDurableObject {
     });
   }
 
-  private async createMatch(player1Id: string, player1Login: string, player2Id: string, player2Login: string): Promise<string> {
+  private async createMatch(
+    player1Id: string,
+    player1Login: string,
+    player2Id: string,
+    player2Login: string,
+  ): Promise<string> {
     const db = getDb(this.env.DB);
 
     const result = await db

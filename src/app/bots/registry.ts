@@ -1,7 +1,7 @@
 import type { Bot } from "./bot";
+import { ONLY_PAPER_BOT_NAME, OnlyPaperBot } from "./only_paper";
 import { ONLY_ROCK_BOT_NAME, OnlyRockBot } from "./only_rock";
 import { ONLY_SCISSORS_BOT_NAME, OnlyScissorsBot } from "./only_scissors";
-import { ONLY_PAPER_BOT_NAME, OnlyPaperBot } from "./only_paper";
 import { RANDOM_BOT_NAME, RandomBot } from "./random_bot";
 
 const BOTS: Record<string, () => Bot> = {

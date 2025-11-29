@@ -24,10 +24,7 @@ export class LeaderboardDurableObject {
     try {
       const now = Date.now();
 
-      if (
-        this.cachedLeaderboard &&
-        now - this.cachedLeaderboard.timestamp < CACHE_DURATION_MS
-      ) {
+      if (this.cachedLeaderboard && now - this.cachedLeaderboard.timestamp < CACHE_DURATION_MS) {
         return Response.json(this.cachedLeaderboard.data);
       }
 
@@ -40,10 +37,7 @@ export class LeaderboardDurableObject {
       return Response.json(leaderboard);
     } catch (error) {
       console.error("Leaderboard error:", error);
-      return Response.json(
-        { error: "Failed to fetch leaderboard" },
-        { status: 500 },
-      );
+      return Response.json({ error: "Failed to fetch leaderboard" }, { status: 500 });
     }
   }
 

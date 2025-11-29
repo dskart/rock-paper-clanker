@@ -74,7 +74,10 @@ export class GameService {
       .select()
       .from(schema.roundChoices)
       .where(
-        and(eq(schema.roundChoices.roundId, currentRound.id), eq(schema.roundChoices.playerId, playerId)),
+        and(
+          eq(schema.roundChoices.roundId, currentRound.id),
+          eq(schema.roundChoices.playerId, playerId),
+        ),
       )
       .limit(1);
 
@@ -127,10 +130,7 @@ export class GameService {
     };
   }
 
-  private async getCompletedMatchResult(
-    match: Match,
-    playerId: string,
-  ): Promise<PlayRoundResult> {
+  private async getCompletedMatchResult(match: Match, playerId: string): Promise<PlayRoundResult> {
     // Get the last completed round
     const completedRounds = await this.db
       .select()
@@ -240,8 +240,7 @@ export class GameService {
           roundNumber: currentRoundNumber,
           createdAt: new Date(),
         });
-      } catch {
-      }
+      } catch {}
 
       [round] = await this.db
         .select()

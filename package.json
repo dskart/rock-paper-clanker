@@ -6,11 +6,10 @@
     "dev": "wrangler dev",
     "start": "wrangler dev",
     "deploy:prod": "wrangler deploy --env production",
-    "test": "vitest run",
-    "test:watch": "vitest",
     "format": "biome format --write",
     "lint:fix": "biome lint --fix",
     "lint": "biome lint",
+    "check": "biome check",
     "generate": "wrangler types && npm run build:css && npm run build:static-packages",
     "type-check": "tsc --noEmit",
     "inspector": "npx -y @modelcontextprotocol/inspector@latest --config .mcp.json --server rock-paper-clanker",
@@ -43,7 +42,6 @@
     "daisyui": "^5.5.5",
     "tailwindcss": "^4.1.17",
     "typescript": "5.9.3",
-    "vitest": "^2.1.8",
     "wrangler": "^4.46.0"
   }
 }

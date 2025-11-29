@@ -846,9 +846,7 @@ async function verifySignature(
     if (!matches) {
       return false;
     }
-    const signatureBytes = new Uint8Array(
-      matches.map((byte) => Number.parseInt(byte, 16)),
-    );
+    const signatureBytes = new Uint8Array(matches.map((byte) => Number.parseInt(byte, 16)));
     return await crypto.subtle.verify("HMAC", key, signatureBytes.buffer, enc.encode(data));
   } catch (_e) {
     return false;
