@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "rock-paper-clanker": {
+      "type": "http",
+      "url": "http://localhost:8787/mcp",
+      "permissions": {
+        "allow": ["*"]
+      }
+    }
+  }
+}

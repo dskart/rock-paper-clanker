@@ -2,65 +2,79 @@
  * For more details on how to configure Wrangler, refer to:
  * https://developers.cloudflare.com/workers/wrangler/configuration/
  */
-/**
- * For more details on how to configure Wrangler, refer to:
- * https://developers.cloudflare.com/workers/wrangler/configuration/
- */
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "mcp-ts",
-	"main": "src/index.ts",
-	"compatibility_date": "2025-03-10",
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
-	"migrations": [
-		{
-			"new_sqlite_classes": [
-				"MyMCP"
-			],
-			"tag": "v1"
-		}
-	],
-	"durable_objects": {
-		"bindings": [
-			{
-				"class_name": "MyMCP",
-				"name": "MCP_OBJECT"
-			}
-		]
-	},
-	"observability": {
-		"enabled": true
-	}
-	/**
-	 * Smart Placement
-	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
-	 */
-	// "placement": { "mode": "smart" }
-	/**
-	 * Bindings
-	 * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
-	 * databases, object storage, AI inference, real-time communication and more.
-	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
-	 */
-	/**
-	 * Environment Variables
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
-	 */
-	// "vars": { "MY_VARIABLE": "production_value" }
-	/**
-	 * Note: Use secrets to store sensitive data.
-	 * https://developers.cloudflare.com/workers/configuration/secrets/
-	 */
-	/**
-	 * Static Assets
-	 * https://developers.cloudflare.com/workers/static-assets/binding/
-	 */
-	// "assets": { "directory": "./public/", "binding": "ASSETS" }
-	/**
-	 * Service Bindings (communicate between multiple Workers)
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
-	 */
-	// "services": [{ "binding": "MY_SERVICE", "service": "my-service" }]
+    "$schema": "node_modules/wrangler/config-schema.json",
+    "name": "rock-paper-wrangler",
+    "main": "src/index.ts",
+    "compatibility_date": "2025-03-10",
+    "compatibility_flags": [
+        "nodejs_compat"
+    ],
+    "rules": [
+        {
+            "type": "Text",
+            "globs": [
+                "**/*.html",
+                "**/public/static/*.css",
+                "**/public/static/*.js"
+            ],
+            "fallthrough": false
+        }
+    ],
+    "migrations": [
+        {
+            "new_sqlite_classes": [
+                "MCP"
+            ],
+            "tag": "v1"
+        }
+    ],
+    "durable_objects": {
+        "bindings": [
+            {
+                "class_name": "MCP",
+                "name": "MCP_OBJECT"
+            },
+            {
+                "class_name": "MatchmakerDurableObject",
+                "name": "MATCHMAKER_OBJECT"
+            },
+            {
+                "class_name": "LeaderboardDurableObject",
+                "name": "LEADERBOARD_OBJECT"
+            }
+        ]
+    },
+    "observability": {
+        "enabled": true
+    },
+    // Local environment configuration (default)
+    "d1_databases": [
+        {
+            "binding": "DB",
+            "database_name": "rock-paper-wrangler-db",
+            "database_id": "local"
+        }
+    ],
+    // Production environment
+    "env": {
+        "production": {
+            "d1_databases": [
+                {
+                    "binding": "DB",
+                    "database_name": "rock-paper-wrangler-db",
+                    // Create production database with: wrangler d1 create rock-paper-wrangler-db --env production
+                    // Then replace with the actual database_id
+                    "database_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                }
+            ],
+            "vars": {
+                "ENVIRONMENT": "production",
+                "MATCHMAKER__TIMEOUT": "60000", // 60 seconds for production
+                "GAME_SERVICE__ROUND_POLL_INTERVAL": "1000",
+                "GAME_SERVICE__ROUND_MAX_ATTEMPTS": "60",
+                "GAME_SERVICE__WINNING_SCORE": "2"
+            }
+        }
+    }
 }
