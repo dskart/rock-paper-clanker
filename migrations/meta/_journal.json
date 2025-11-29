@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1762812820459,
-      "tag": "0000_shallow_korg",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1762814646204,
-      "tag": "0001_fine_nick_fury",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1764370069935,
-      "tag": "0002_large_masked_marvel",
+      "when": 1764380405684,
+      "tag": "0000_dazzling_charles_xavier",
       "breakpoints": true
     }
   ]

@@ -49,23 +49,33 @@ export class LeaderboardDurableObject {
 
   private async fetchLeaderboard(): Promise<LeaderboardEntry[]> {
     const results = await this.env.DB.prepare(`
-      WITH player_stats AS (
+      WITH match_winners AS (
+        SELECT
+          m.id AS matchId,
+          m.player1_id,
+          m.player2_id,
+          SUM(CASE WHEN r.winner_id = m.player1_id THEN 1 ELSE 0 END) AS player1_rounds_won,
+          SUM(CASE WHEN r.winner_id = m.player2_id THEN 1 ELSE 0 END) AS player2_rounds_won
+        FROM matches m
+        JOIN rounds r ON r.match_id = m.id
+        WHERE m.status = 'completed' AND r.winner_id IS NOT NULL
+        GROUP BY m.id, m.player1_id, m.player2_id
+      ),
+      player_stats AS (
         SELECT
           player1_id AS playerId,
-          SUM(CASE WHEN player1_score > player2_score THEN 1 ELSE 0 END) AS wins,
-          SUM(CASE WHEN player1_score < player2_score THEN 1 ELSE 0 END) AS losses
-        FROM matches
-        WHERE status = 'completed'
+          SUM(CASE WHEN player1_rounds_won > player2_rounds_won THEN 1 ELSE 0 END) AS wins,
+          SUM(CASE WHEN player1_rounds_won < player2_rounds_won THEN 1 ELSE 0 END) AS losses
+        FROM match_winners
         GROUP BY player1_id
 
         UNION ALL
 
         SELECT
           player2_id AS playerId,
-          SUM(CASE WHEN player2_score > player1_score THEN 1 ELSE 0 END) AS wins,
-          SUM(CASE WHEN player2_score < player1_score THEN 1 ELSE 0 END) AS losses
-        FROM matches
-        WHERE status = 'completed'
+          SUM(CASE WHEN player2_rounds_won > player1_rounds_won THEN 1 ELSE 0 END) AS wins,
+          SUM(CASE WHEN player2_rounds_won < player1_rounds_won THEN 1 ELSE 0 END) AS losses
+        FROM match_winners
         GROUP BY player2_id
       ),
       aggregated AS (

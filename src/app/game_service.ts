@@ -22,9 +22,9 @@ export type GameServiceConfig = z.infer<typeof GameServiceConfigSchema>;
 export function parseGameServiceConfig(env: Env): GameServiceConfig {
   const envRecord = env as unknown as Record<string, unknown>;
   return GameServiceConfigSchema.parse({
-    ROUND_POLL_INTERVAL: envRecord.GAME_SERVICE__ROUND_POLL_INTERVAL,
-    ROUND_MAX_ATTEMPTS: envRecord.GAME_SERVICE__ROUND_MAX_ATTEMPTS,
-    WINNING_SCORE: envRecord.GAME_SERVICE__WINNING_SCORE,
+    ROUND_POLL_INTERVAL: envRecord.ROCK_PAPER_CLANKER__GAME_SERVICE__ROUND_POLL_INTERVAL,
+    ROUND_MAX_ATTEMPTS: envRecord.ROCK_PAPER_CLANKER__GAME_SERVICE__ROUND_MAX_ATTEMPTS,
+    WINNING_SCORE: envRecord.ROCK_PAPER_CLANKER__GAME_SERVICE__WINNING_SCORE,
   });
 }
 
@@ -69,8 +69,23 @@ export class GameService {
     const currentRound = await this.getCurrentRound(matchId);
     const opponentId = playerId === match.player1Id ? match.player2Id : match.player1Id;
 
-    await this.setPlayerChoice(currentRound.id, playerId, choice);
-    await this.waitForOpponent(opponentId, currentRound);
+    // Check if player already played this round
+    const existingChoice = await this.db
+      .select()
+      .from(schema.roundChoices)
+      .where(
+        and(eq(schema.roundChoices.roundId, currentRound.id), eq(schema.roundChoices.playerId, playerId)),
+      )
+      .limit(1);
+
+    if (existingChoice.length > 0) {
+      // Player already played, just wait for the result
+      await this.waitForOpponent(opponentId, currentRound);
+    } else {
+      // Player hasn't played yet, set their choice
+      await this.setPlayerChoice(currentRound.id, playerId, choice);
+      await this.waitForOpponent(opponentId, currentRound);
+    }
 
     const choices = await this.getRoundChoices(currentRound.id);
     const winnerId = await this.determineWinner(match, currentRound, choices);
@@ -206,7 +221,7 @@ export class GameService {
     const completedRounds = await this.db
       .select()
       .from(schema.rounds)
-      .where(and(eq(schema.rounds.matchId, matchId), isNotNull(schema.rounds.winnerId)));
+      .where(and(eq(schema.rounds.matchId, matchId), isNotNull(schema.rounds.completedAt)));
 
     const currentRoundNumber = completedRounds.length + 1;
 
@@ -278,7 +293,7 @@ export class GameService {
     round: Round,
     choices: RoundChoice[],
   ): Promise<string | null> {
-    if (round.winnerId !== undefined) {
+    if (round.completedAt) {
       return round.winnerId;
     }
 

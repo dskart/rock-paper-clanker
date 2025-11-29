@@ -435,6 +435,7 @@ export interface ApprovalDialogOptions {
    * Arbitrary state data to pass through the approval flow
    * Will be encoded in the form and returned when approval is complete
    */
+  // biome-ignore lint/suspicious/noExplicitAny: Arbitrary state data can contain any type
   state: Record<string, any>;
   /**
    * CSRF token to include in the form
@@ -841,8 +842,12 @@ async function verifySignature(
   const key = await importKey(secret);
   const enc = new TextEncoder();
   try {
+    const matches = signatureHex.match(/.{1,2}/g);
+    if (!matches) {
+      return false;
+    }
     const signatureBytes = new Uint8Array(
-      signatureHex.match(/.{1,2}/g)!.map((byte) => Number.parseInt(byte, 16)),
+      matches.map((byte) => Number.parseInt(byte, 16)),
     );
     return await crypto.subtle.verify("HMAC", key, signatureBytes.buffer, enc.encode(data));
   } catch (_e) {

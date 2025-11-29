@@ -16,7 +16,8 @@
       "Bash(npm uninstall:*)",
       "Bash(npx drizzle-kit generate)",
       "Bash(pkill:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npx wrangler d1 list:*)"
     ],
     "deny": [],
     "ask": []

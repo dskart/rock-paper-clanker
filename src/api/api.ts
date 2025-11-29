@@ -1,6 +1,8 @@
+import OAuthProvider from "@cloudflare/workers-oauth-provider";
 import type { RouterType } from "itty-router";
 import Mustache from "mustache";
 import type { LeaderboardEntry } from "../app/leaderboard_durable_object";
+import { GitHubHandler } from "./auth/github_handler";
 import homeTemplate from "./home.html";
 import { MCP } from "./mcp";
 import outputCss from "./public/static/output.css";
@@ -26,10 +28,24 @@ export class Api {
       });
     });
 
-    router.all("/mcp", (request) => MCP.serve("/mcp").fetch(request, env, ctx));
-    router.all("/sse", (request) => MCP.serveSSE("/sse").fetch(request, env, ctx));
+    // router.all("/mcp", (request) => MCP.serve("/mcp").fetch(request, env, ctx));
+    // router.all("/sse", (request) => MCP.serveSSE("/sse").fetch(request, env, ctx));
 
-    router.all("*", () => new Response("Not Found", { status: 404 }));
+    const oauthProvider = new OAuthProvider({
+      // NOTE - during the summer 2025, the SSE protocol was deprecated and replaced by the Streamable-HTTP protocol
+      // https://developers.cloudflare.com/agents/model-context-protocol/transport/#mcp-server-with-authentication
+      apiHandlers: {
+        "/sse": MCP.serveSSE("/sse"), // deprecated SSE protocol - use /mcp instead
+        "/mcp": MCP.serve("/mcp"), // Streamable-HTTP protocol
+      },
+      authorizeEndpoint: "/authorize",
+      clientRegistrationEndpoint: "/register",
+      // biome-ignore lint/suspicious/noExplicitAny: OAuth provider requires type compatibility with Hono app
+      defaultHandler: GitHubHandler as any,
+      tokenEndpoint: "/token",
+    });
+
+    router.all("*", (request) => oauthProvider.fetch(request, env, ctx));
   }
 }
 

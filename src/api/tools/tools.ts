@@ -5,13 +5,13 @@ import { registerGetMatchRoundsTool } from "./get_match_rounds_tool";
 import { registerGetMatchesTool } from "./get_matches_tool";
 import { registerPlayRoundTool } from "./play_round_tool";
 
-export function registerTools(server: McpServer, env: Env) {
-  if (env.ENVIRONMENT === "local") {
+export function registerTools(server: McpServer, env: Env, getUserId: () => string) {
+  if (env.ROCK_PAPER_CLANKER__ENVIRONMENT === "dev") {
     registerGetMatchesTool(server, env);
     registerGetMatchRoundsTool(server, env);
   }
 
-  registerFindMatchTool(server, env);
-  registerPlayRoundTool(server, env);
+  registerFindMatchTool(server, env, getUserId);
+  registerPlayRoundTool(server, env, getUserId);
   registerGetLeaderboardTool(server, env);
 }

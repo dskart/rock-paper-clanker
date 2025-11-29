@@ -11,7 +11,7 @@ export type MatchmakerConfig = z.infer<typeof MatchmakerConfigSchema>;
 export function parseMatchmakerConfig(env: Env): MatchmakerConfig {
   const envRecord = env as unknown as Record<string, unknown>;
   return MatchmakerConfigSchema.parse({
-    TIMEOUT: envRecord.MATCHMAKER__TIMEOUT,
+    TIMEOUT: envRecord.ROCK_PAPER_CLANKER__MATCHMAKER__TIMEOUT,
   });
 }
 

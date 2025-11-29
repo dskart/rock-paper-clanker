@@ -1,5 +1,7 @@
+import { env } from "cloudflare:workers";
 import type { AuthRequest, OAuthHelpers } from "@cloudflare/workers-oauth-provider";
 import { Hono } from "hono";
+import { Octokit } from "octokit";
 import { fetchUpstreamAuthToken, getUpstreamAuthorizeUrl, type Props } from "./utils";
 import {
   addApprovedClient,
@@ -23,11 +25,11 @@ app.get("/authorize", async (c) => {
   }
 
   // Check if client is already approved
-  if (await isClientApproved(c.req.raw, clientId, c.env.COOKIE_ENCRYPTION_KEY)) {
+  if (await isClientApproved(c.req.raw, clientId, env.ROCK_PAPER_CLANKER__COOKIE_ENCRYPTION_KEY)) {
     // Skip approval dialog but still create secure state and bind to session
-    const { stateToken } = await createOAuthState(oauthReqInfo, c.env.OAUTH_KV);
+    const { stateToken } = await createOAuthState(oauthReqInfo, c.env.ROCK_PAPER_CLANKER_OAUTH_KV);
     const { setCookie: sessionBindingCookie } = await bindStateToSession(stateToken);
-    return redirectToGoogle(c.req.raw, c.env, stateToken, { "Set-Cookie": sessionBindingCookie });
+    return redirectToGithub(c.req.raw, stateToken, { "Set-Cookie": sessionBindingCookie });
   }
 
   // Generate CSRF protection for the approval form
@@ -37,8 +39,9 @@ app.get("/authorize", async (c) => {
     client: await c.env.OAUTH_PROVIDER.lookupClient(clientId),
     csrfToken,
     server: {
-      description: "This MCP Server is a demo for Google OAuth.",
-      name: "Google OAuth Demo",
+      description: "This is a demo MCP Remote Server using GitHub for authentication.",
+      logo: "https://avatars.githubusercontent.com/u/314135?s=200&v=4",
+      name: "Cloudflare GitHub MCP Server",
     },
     setCookie,
     state: { oauthReqInfo },
@@ -74,11 +77,11 @@ app.post("/authorize", async (c) => {
     const approvedClientCookie = await addApprovedClient(
       c.req.raw,
       state.oauthReqInfo.clientId,
-      c.env.COOKIE_ENCRYPTION_KEY,
+      c.env.ROCK_PAPER_CLANKER__COOKIE_ENCRYPTION_KEY,
     );
 
     // Create OAuth state and bind it to this user's session
-    const { stateToken } = await createOAuthState(state.oauthReqInfo, c.env.OAUTH_KV);
+    const { stateToken } = await createOAuthState(state.oauthReqInfo, c.env.ROCK_PAPER_CLANKER_OAUTH_KV);
     const { setCookie: sessionBindingCookie } = await bindStateToSession(stateToken);
 
     // Set both cookies: approved client list + session binding
@@ -86,20 +89,20 @@ app.post("/authorize", async (c) => {
     headers.append("Set-Cookie", approvedClientCookie);
     headers.append("Set-Cookie", sessionBindingCookie);
 
-    return redirectToGoogle(c.req.raw, c.env, stateToken, Object.fromEntries(headers));
-  } catch (error: any) {
+    return redirectToGithub(c.req.raw, stateToken, Object.fromEntries(headers));
+  } catch (error) {
     console.error("POST /authorize error:", error);
     if (error instanceof OAuthError) {
       return error.toResponse();
     }
     // Unexpected non-OAuth error
-    return c.text(`Internal server error: ${error.message}`, 500);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return c.text(`Internal server error: ${message}`, 500);
   }
 });
 
-async function redirectToGoogle(
+async function redirectToGithub(
   request: Request,
-  env: Env,
   stateToken: string,
   headers: Record<string, string> = {},
 ) {
@@ -107,12 +110,11 @@ async function redirectToGoogle(
     headers: {
       ...headers,
       location: getUpstreamAuthorizeUrl({
-        clientId: env.GOOGLE_CLIENT_ID,
-        hostedDomain: env.HOSTED_DOMAIN,
-        redirectUri: new URL("/callback", request.url).href,
-        scope: "email profile",
+        client_id: env.ROCK_PAPER_CLANKER__GITHUB_CLIENT_ID,
+        redirect_uri: new URL("/callback", request.url).href,
+        scope: "read:user",
         state: stateToken,
-        upstreamUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+        upstream_url: "https://github.com/login/oauth/authorize",
       }),
     },
     status: 302,
@@ -122,12 +124,12 @@ async function redirectToGoogle(
 /**
  * OAuth Callback Endpoint
  *
- * This route handles the callback from Google after user authentication.
+ * This route handles the callback from GitHub after user authentication.
  * It exchanges the temporary code for an access token, then stores some
  * user metadata & the auth token as part of the 'props' on the token passed
  * down to the client. It ends by redirecting the client back to _its_ callback URL
  *
- * SECURITY: This endpoint validates that the state parameter from Google
+ * SECURITY: This endpoint validates that the state parameter from GitHub
  * matches both:
  * 1. A valid state token in KV (proves it was created by our server)
  * 2. The __Host-CONSENTED_STATE cookie (proves THIS browser consented to it)
@@ -142,10 +144,10 @@ app.get("/callback", async (c) => {
   let clearSessionCookie: string;
 
   try {
-    const result = await validateOAuthState(c.req.raw, c.env.OAUTH_KV);
+    const result = await validateOAuthState(c.req.raw, c.env.ROCK_PAPER_CLANKER_OAUTH_KV);
     oauthReqInfo = result.oauthReqInfo;
     clearSessionCookie = result.clearCookie;
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof OAuthError) {
       return error.toResponse();
     }
@@ -158,52 +160,35 @@ app.get("/callback", async (c) => {
   }
 
   // Exchange the code for an access token
-  const code = c.req.query("code");
-  if (!code) {
-    return c.text("Missing code", 400);
-  }
-
-  const [accessToken, googleErrResponse] = await fetchUpstreamAuthToken({
-    clientId: c.env.GOOGLE_CLIENT_ID,
-    clientSecret: c.env.GOOGLE_CLIENT_SECRET,
-    code,
-    grantType: "authorization_code",
-    redirectUri: new URL("/callback", c.req.url).href,
-    upstreamUrl: "https://accounts.google.com/o/oauth2/token",
+  const [accessToken, errResponse] = await fetchUpstreamAuthToken({
+    client_id: c.env.ROCK_PAPER_CLANKER__GITHUB_CLIENT_ID,
+    client_secret: c.env.ROCK_PAPER_CLANKER__GITHUB_CLIENT_SECRET,
+    code: c.req.query("code"),
+    redirect_uri: new URL("/callback", c.req.url).href,
+    upstream_url: "https://github.com/login/oauth/access_token",
   });
-  if (googleErrResponse) {
-    return googleErrResponse;
-  }
+  if (errResponse) return errResponse;
 
-  // Fetch the user info from Google
-  const userResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-  if (!userResponse.ok) {
-    return c.text(`Failed to fetch user info: ${await userResponse.text()}`, 500);
-  }
-
-  const { id, name, email } = (await userResponse.json()) as {
-    id: string;
-    name: string;
-    email: string;
-  };
+  // Fetch the user info from GitHub
+  const user = await new Octokit({ auth: accessToken }).rest.users.getAuthenticated();
+  const { login, name, email, id } = user.data;
 
   // Return back to the MCP client a new token
   const { redirectTo } = await c.env.OAUTH_PROVIDER.completeAuthorization({
     metadata: {
       label: name,
     },
+    // This will be available on this.props inside MyMCP
     props: {
+      id,
       accessToken,
       email,
+      login,
       name,
     } as Props,
     request: oauthReqInfo,
     scope: oauthReqInfo.scope,
-    userId: id,
+    userId: login,
   });
 
   // Clear the session binding cookie (one-time use) by creating response with headers
@@ -218,4 +203,4 @@ app.get("/callback", async (c) => {
   });
 });
 
-export { app as GoogleHandler };
+export { app as GitHubHandler };

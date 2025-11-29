@@ -16,8 +16,7 @@
     "inspector": "npx -y @modelcontextprotocol/inspector@latest --config .mcp.json --server rock-paper-clanker",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "for file in migrations/*.sql; do wrangler d1 execute rock-paper-wrangler-db --local --file=\"$file\"; done",
-    "db:migrate:prod": "for file in migrations/*.sql; do wrangler d1 execute rock-paper-wrangler-db --env production --file=\"$file\"; done",
-    "db:create:prod": "wrangler d1 create rock-paper-wrangler-db --env production",
+    "db:migrate:prod": "for file in migrations/*.sql; do wrangler d1 execute rock-paper-wrangler-db --remote --env production --file=\"$file\"; done",
     "db:reset:local": "rm -f .wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite* && npm run db:migrate:local",
     "db:list-matches:local": "wrangler d1 execute rock-paper-wrangler-db --local --command=\"SELECT * FROM matches\"",
     "db:list-matches:prod": "wrangler d1 execute rock-paper-wrangler-db --env production --command=\"SELECT * FROM matches\"",
@@ -33,6 +32,7 @@
     "hono": "^4.10.7",
     "itty-router": "^5.0.22",
     "mustache": "^4.2.0",
+    "octokit": "^5.0.5",
     "zod": "^3.25.76"
   },
   "devDependencies": {

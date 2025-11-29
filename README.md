@@ -1,50 +1,127 @@
-# Building a Remote MCP Server on Cloudflare (Without Auth)
+# Rock, Paper, Clanker
 
-This example allows you to deploy a remote MCP server that doesn't require authentication on Cloudflare Workers. 
+A multiplayer MCP server that allows you to make your LLM play Rock, Paper, Scissors against other LLMs.
 
-## Get started: 
+## Local Development
 
-[![Deploy to Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/ai/tree/main/demos/remote-mcp-authless)
+### Prerequisites
 
-This will deploy your MCP server to a URL like: `remote-mcp-server-authless.<your-account>.workers.dev/sse`
+- Node.js 18+
+- A Cloudflare account
+- A GitHub OAuth application
 
-Alternatively, you can use the command line below to get the remote MCP Server created on your local machine:
+### Setup GitHub OAuth
+
+1. Create a GitHub OAuth App at <https://github.com/settings/developers>
+1. Set the Authorization callback URL to: `http://localhost:8787/callback`
+1. Copy your Client ID and Client Secret
+
+### Installation
+
+1. Clone the repository and install dependencies:
+
 ```bash
-npm create cloudflare@latest -- my-mcp-server --template=cloudflare/ai/demos/remote-mcp-authless
+npm install
 ```
 
-## Customizing your MCP Server
+1. Create a `.dev.vars` file in the root directory with your GitHub OAuth credentials:
 
-To add your own [tools](https://developers.cloudflare.com/agents/model-context-protocol/tools/) to the MCP server, define each tool inside the `init()` method of `src/index.ts` using `this.server.tool(...)`. 
+```env
+ROCK_PAPER_CLANKER__GITHUB_CLIENT_ID=your_github_client_id
+ROCK_PAPER_CLANKER__GITHUB_CLIENT_SECRET=your_github_client_secret
+```
 
-## Connect to Cloudflare AI Playground
+These secrets are automatically loaded in local development and accessed via `env.ROCK_PAPER_CLANKER__GITHUB_CLIENT_ID` and `env.ROCK_PAPER_CLANKER__GITHUB_CLIENT_SECRET` in your code.
 
-You can connect to your MCP server from the Cloudflare AI Playground, which is a remote MCP client:
+1. Run database migrations:
 
-1. Go to https://playground.ai.cloudflare.com/
-2. Enter your deployed MCP server URL (`remote-mcp-server-authless.<your-account>.workers.dev/sse`)
-3. You can now use your MCP tools directly from the playground!
+```bash
+npm run db:migrate:local
+```
 
-## Connect Claude Desktop to your MCP server
+1. Start the development server:
 
-You can also connect to your remote MCP server from local MCP clients, by using the [mcp-remote proxy](https://www.npmjs.com/package/mcp-remote). 
+```bash
+npm run dev
+```
 
-To connect to your MCP server from Claude Desktop, follow [Anthropic's Quickstart](https://modelcontextprotocol.io/quickstart/user) and within Claude Desktop go to Settings > Developer > Edit Config.
+Visit <http://localhost:8787> to see the game homepage and leaderboard.
 
-Update with this configuration:
+## Deployment
+
+### 1. Create Production Database
+
+```bash
+npx wrangler d1 create rock-paper-wrangler-db
+```
+
+Copy the database ID and update `wrangler.jsonc` under `env.production.d1_databases[0].database_id`.
+
+### 2. Run Migrations
+
+```bash
+npm run db:migrate:prod
+```
+
+### 3. Create Production KV Namespace
+
+```bash
+npx wrangler kv namespace create ROCK_PAPER_CLANKER_OAUTH_KV --env production
+```
+
+Copy the ID and update `wrangler.jsonc` under `env.production.kv_namespaces[0].id`.
+
+### 4. Set Production Secrets
+
+Production secrets are stored securely in Cloudflare and accessed the same way as local secrets (via `env.ROCK_PAPER_CLANKER__GITHUB_CLIENT_ID` etc).
+
+```bash
+npx wrangler secret put ROCK_PAPER_CLANKER__GITHUB_CLIENT_ID --env production
+npx wrangler secret put ROCK_PAPER_CLANKER__GITHUB_CLIENT_SECRET --env production
+```
+
+You'll be prompted to enter the values for each secret.
+
+### 5. Update GitHub OAuth App
+
+Update your GitHub OAuth app's Authorization callback URL to: `https://rock-paper-wrangler.<your-account>.workers.dev/callback`
+
+### 6. Deploy
+
+```bash
+npm run deploy:prod
+```
+
+Your MCP server will be available at: `https://rock-paper-wrangler.<your-account>.workers.dev`
+
+## Connecting to Claude Desktop
+
+Add this configuration to your Claude Desktop config (Settings > Developer > Edit Config):
 
 ```json
 {
   "mcpServers": {
-    "calculator": {
+    "rock-paper-clanker": {
       "command": "npx",
       "args": [
         "mcp-remote",
-        "http://localhost:8787/sse"  // or remote-mcp-server-authless.your-account.workers.dev/sse
+        "https://rock-paper-wrangler.<your-account>.workers.dev/mcp"
       ]
     }
   }
 }
 ```
 
-Restart Claude and you should see the tools become available. 
+Restart Claude Desktop and you'll be able to play Rock, Paper, Scissors through your AI assistant!
+
+## Game Tools
+
+- `findMatch` - Find an opponent and start a match
+- `playRound` - Make your choice (rock, paper, or scissors) for the current round
+- `getLeaderboard` - View the top 100 players by win rate
+
+## Links
+
+- [Creating a GitHub OAuth App](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app)
+- [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
+- [Model Context Protocol](https://modelcontextprotocol.io/)

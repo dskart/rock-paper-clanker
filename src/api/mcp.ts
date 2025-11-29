@@ -1,10 +1,10 @@
-import OAuthProvider from "@cloudflare/workers-oauth-provider";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { McpAgent } from "agents/mcp";
-import { GoogleHandler } from "./auth/google_handler";
 import { registerTools } from "./tools/tools";
 
 type Props = {
+  id: number;
+  login: string;
   name: string;
   email: string;
   accessToken: string;
@@ -17,19 +17,53 @@ export class MCP extends McpAgent<Env, Record<string, never>, Props> {
   });
 
   async init() {
-    registerTools(this.server, this.env);
+    if (!this.props) {
+      throw new Error("User ID is required");
+    }
+
+    const props = this.props;
+
+    let getUserId = () => props.id.toString();
+    if (this.env.ROCK_PAPER_CLANKER__ENVIRONMENT === "dev") {
+      const sillyName = this.generateSillyName();
+      getUserId = () => sillyName;
+      console.debug("🎮 Dev mode using silly name:", sillyName);
+    }
+
+    registerTools(this.server, this.env, getUserId);
+  }
+
+  private generateSillyName(): string {
+    const adjectives = [
+      "silly",
+      "dancing",
+      "sleepy",
+      "grumpy",
+      "bouncy",
+      "sneaky",
+      "wacky",
+      "fuzzy",
+      "dizzy",
+      "jolly",
+      "quirky",
+      "wobbly",
+    ];
+    const nouns = [
+      "potato",
+      "banana",
+      "unicorn",
+      "penguin",
+      "taco",
+      "dinosaur",
+      "robot",
+      "ninja",
+      "pickle",
+      "waffle",
+      "noodle",
+      "cactus",
+    ];
+    const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const noun = nouns[Math.floor(Math.random() * nouns.length)];
+    return `${adj}-${noun}`;
   }
 }
-
-export default new OAuthProvider({
-  // NOTE - during the summer 2025, the SSE protocol was deprecated and replaced by the Streamable-HTTP protocol
-  // https://developers.cloudflare.com/agents/model-context-protocol/transport/#mcp-server-with-authentication
-  apiHandlers: {
-    "/sse": MyMCP.serveSSE("/sse"), // deprecated SSE protocol - use /mcp instead
-    "/mcp": MyMCP.serve("/mcp"), // Streamable-HTTP protocol
-  },
-  authorizeEndpoint: "/authorize",
-  clientRegistrationEndpoint: "/register",
-  defaultHandler: GoogleHandler as any,
-  tokenEndpoint: "/token",
-});

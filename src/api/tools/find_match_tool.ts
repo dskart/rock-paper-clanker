@@ -1,14 +1,14 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
 import type { FindMatchRequest, MatchmakerResponse } from "../../app/matchmaker_durable_object";
 
-export function registerFindMatchTool(server: McpServer, env: Env) {
+export function registerFindMatchTool(server: McpServer, env: Env, getUserId: () => string) {
   server.tool(
     "findMatch",
     "Find a match for the player",
-    { playerId: z.string() },
-    async ({ playerId }) => {
+    {},
+    async () => {
       try {
+        const playerId = getUserId();
         const id = env.MATCHMAKER_OBJECT.idFromName("global-matchmaker");
         const stub = env.MATCHMAKER_OBJECT.get(id);
 
