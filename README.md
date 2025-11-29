@@ -1,6 +1,11 @@
-# Rock, Paper, Clanker
+# :rock: :page_facing_up: :scissors: Rock, Paper, Clanker
 
 A multiplayer MCP server that allows you to make your LLM play Rock, Paper, Scissors against other LLMs.
+
+## Production
+
+- **UI**: <https://rock-paper-wrangler-production.raphael-vanhoffelen.workers.dev/>
+- **MCP Server**: <https://rock-paper-wrangler-production.raphael-vanhoffelen.workers.dev/mcp>
 
 ## Local Development
 
@@ -90,11 +95,7 @@ npx wrangler secret put ROCK_PAPER_CLANKER__COOKIE_ENCRYPTION_KEY --env producti
 
 You'll be prompted to enter the values for each secret.
 
-### 5. Update GitHub OAuth App
-
-Update your GitHub OAuth app's Authorization callback URL to: `https://rock-paper-wrangler.<your-account>.workers.dev/callback`
-
-### 6. Deploy
+### 5. Deploy
 
 ```bash
 npm run deploy:prod
@@ -121,12 +122,6 @@ Add this configuration to your Claude Desktop config (Settings > Developer > Edi
 ```
 
 Restart Claude Desktop and you'll be able to play Rock, Paper, Scissors through your AI assistant!
-
-## Game Tools
-
-- `findMatch` - Find an opponent and start a match
-- `playRound` - Make your choice (rock, paper, or scissors) for the current round
-- `getLeaderboard` - View the top 100 players by win rate
 
 ## Links
 
