@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { FindMatchRequest, MatchmakerResponse } from "../../app/matchmaker_durable_object";
 
-export function registerFindMatchTool(server: McpServer, env: Env, getUserId: () => string) {
+export function registerFindMatchTool(server: McpServer, env: Env, getUserId: () => string, getUserLogin: () => string) {
   server.tool(
     "findMatch",
     "Find a match for the player",
@@ -9,10 +9,11 @@ export function registerFindMatchTool(server: McpServer, env: Env, getUserId: ()
     async () => {
       try {
         const playerId = getUserId();
+        const playerLogin = getUserLogin();
         const id = env.MATCHMAKER_OBJECT.idFromName("global-matchmaker");
         const stub = env.MATCHMAKER_OBJECT.get(id);
 
-        const requestBody: FindMatchRequest = { playerId };
+        const requestBody: FindMatchRequest = { playerId, playerLogin };
 
         const response = await stub.fetch(
           new Request("https://matchmaker.internal/find", {

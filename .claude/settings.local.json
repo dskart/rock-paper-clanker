@@ -17,7 +17,8 @@
       "Bash(npx drizzle-kit generate)",
       "Bash(pkill:*)",
       "Bash(npx tsc:*)",
-      "Bash(npx wrangler d1 list:*)"
+      "Bash(npx wrangler d1 list:*)",
+      "Bash(npx wrangler types:*)"
     ],
     "deny": [],
     "ask": []

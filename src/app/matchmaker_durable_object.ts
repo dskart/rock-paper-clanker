@@ -18,6 +18,7 @@ export function parseMatchmakerConfig(env: Env): MatchmakerConfig {
 // Request schema
 const FindMatchRequestSchema = z.object({
   playerId: z.string().min(1),
+  playerLogin: z.string().min(1),
 });
 
 // Response schemas
@@ -49,6 +50,7 @@ export class MatchmakerDurableObject {
   private config: MatchmakerConfig;
   private pendingPlayer: {
     playerId: string;
+    playerLogin: string;
     timestamp: number;
     resolve: (matchId: string) => void;
   } | null = null;
@@ -61,8 +63,8 @@ export class MatchmakerDurableObject {
   async fetch(request: Request): Promise<Response> {
     try {
       const body = await request.json();
-      const { playerId } = FindMatchRequestSchema.parse(body);
-      return await this.findMatch(playerId);
+      const { playerId, playerLogin } = FindMatchRequestSchema.parse(body);
+      return await this.findMatch(playerId, playerLogin);
     } catch (error) {
       if (error instanceof z.ZodError) {
         const errorResponse: MatchmakerResponse = {
@@ -79,7 +81,7 @@ export class MatchmakerDurableObject {
     }
   }
 
-  private async findMatch(playerId: string): Promise<Response> {
+  private async findMatch(playerId: string, playerLogin: string): Promise<Response> {
     // Already waiting? Reject duplicate
     if (this.pendingPlayer?.playerId === playerId) {
       const errorResponse: MatchmakerResponse = {
@@ -92,8 +94,9 @@ export class MatchmakerDurableObject {
     // Someone waiting? Match them!
     if (this.pendingPlayer) {
       const opponentId = this.pendingPlayer.playerId;
+      const opponentLogin = this.pendingPlayer.playerLogin;
 
-      const matchId = await this.createMatch(playerId, opponentId);
+      const matchId = await this.createMatch(playerId, playerLogin, opponentId, opponentLogin);
 
       // Notify waiting player
       this.pendingPlayer.resolve(matchId);
@@ -111,7 +114,7 @@ export class MatchmakerDurableObject {
 
           // Match with a random bot instead of timing out
           const botName = getRandomBotName();
-          const matchId = await this.createMatch(playerId, botName);
+          const matchId = await this.createMatch(playerId, playerLogin, botName, botName);
 
           const matchedResponse: MatchmakerResponse = { status: "matched", matchId };
           resolve(Response.json(matchedResponse));
@@ -123,6 +126,7 @@ export class MatchmakerDurableObject {
 
       this.pendingPlayer = {
         playerId,
+        playerLogin,
         timestamp: Date.now(),
         resolve: (matchId: string) => {
           clearTimeout(timeoutId);
@@ -133,14 +137,16 @@ export class MatchmakerDurableObject {
     });
   }
 
-  private async createMatch(player1Id: string, player2Id: string): Promise<string> {
+  private async createMatch(player1Id: string, player1Login: string, player2Id: string, player2Login: string): Promise<string> {
     const db = getDb(this.env.DB);
 
     const result = await db
       .insert(schema.matches)
       .values({
         player1Id: player1Id,
+        player1Login: player1Login,
         player2Id: player2Id,
+        player2Login: player2Login,
         status: "active",
         createdAt: new Date(),
       })

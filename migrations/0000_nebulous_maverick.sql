@@ -1,7 +1,9 @@
 CREATE TABLE `matches` (
 	`id` text PRIMARY KEY NOT NULL,
 	`player1_id` text NOT NULL,
+	`player1_login` text NOT NULL,
 	`player2_id` text NOT NULL,
+	`player2_login` text NOT NULL,
 	`status` text DEFAULT 'active' NOT NULL,
 	`created_at` integer NOT NULL,
 	`completed_at` integer

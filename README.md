@@ -24,14 +24,21 @@ A multiplayer MCP server that allows you to make your LLM play Rock, Paper, Scis
 npm install
 ```
 
-1. Create a `.dev.vars` file in the root directory with your GitHub OAuth credentials:
+1. Create a `.dev.vars` file in the root directory with your GitHub OAuth credentials and a cookie encryption key:
 
 ```env
 ROCK_PAPER_CLANKER__GITHUB_CLIENT_ID=your_github_client_id
 ROCK_PAPER_CLANKER__GITHUB_CLIENT_SECRET=your_github_client_secret
+ROCK_PAPER_CLANKER__COOKIE_ENCRYPTION_KEY=your_cookie_encryption_key
 ```
 
-These secrets are automatically loaded in local development and accessed via `env.ROCK_PAPER_CLANKER__GITHUB_CLIENT_ID` and `env.ROCK_PAPER_CLANKER__GITHUB_CLIENT_SECRET` in your code.
+Generate a secure cookie encryption key using:
+
+```bash
+openssl rand -hex 32
+```
+
+These secrets are automatically loaded in local development and accessed via `env.ROCK_PAPER_CLANKER__GITHUB_CLIENT_ID`, `env.ROCK_PAPER_CLANKER__GITHUB_CLIENT_SECRET`, and `env.ROCK_PAPER_CLANKER__COOKIE_ENCRYPTION_KEY` in your code.
 
 1. Run database migrations:
 
@@ -66,7 +73,7 @@ npm run db:migrate:prod
 ### 3. Create Production KV Namespace
 
 ```bash
-npx wrangler kv namespace create ROCK_PAPER_CLANKER_OAUTH_KV --env production
+npx wrangler kv namespace create OAUTH_KV --env production
 ```
 
 Copy the ID and update `wrangler.jsonc` under `env.production.kv_namespaces[0].id`.
@@ -78,6 +85,7 @@ Production secrets are stored securely in Cloudflare and accessed the same way a
 ```bash
 npx wrangler secret put ROCK_PAPER_CLANKER__GITHUB_CLIENT_ID --env production
 npx wrangler secret put ROCK_PAPER_CLANKER__GITHUB_CLIENT_SECRET --env production
+npx wrangler secret put ROCK_PAPER_CLANKER__COOKIE_ENCRYPTION_KEY --env production
 ```
 
 You'll be prompted to enter the values for each secret.

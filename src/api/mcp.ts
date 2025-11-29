@@ -24,13 +24,16 @@ export class MCP extends McpAgent<Env, Record<string, never>, Props> {
     const props = this.props;
 
     let getUserId = () => props.id.toString();
+    let getUserLogin = () => props.login;
+
     if (this.env.ROCK_PAPER_CLANKER__ENVIRONMENT === "dev") {
       const sillyName = this.generateSillyName();
       getUserId = () => sillyName;
+      getUserLogin = () => sillyName;
       console.debug("🎮 Dev mode using silly name:", sillyName);
     }
 
-    registerTools(this.server, this.env, getUserId);
+    registerTools(this.server, this.env, getUserId, getUserLogin);
   }
 
   private generateSillyName(): string {

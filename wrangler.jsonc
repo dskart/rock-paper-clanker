@@ -54,7 +54,13 @@
         {
             "binding": "DB",
             "database_name": "rock-paper-wrangler-db",
-            "database_id": "local"
+            "database_id": "befbc073-a315-4144-a0d3-ff99d2732489"
+        }
+    ],
+    "kv_namespaces": [
+        {
+            "binding": "OAUTH_KV",
+            "id": "preview_id"
         }
     ],
     // Production environment
@@ -80,7 +86,7 @@
                 {
                     "binding": "DB",
                     "database_name": "rock-paper-wrangler-db",
-                    "database_id": "ed7fe5d3-afa3-4385-9c1f-a2af274a5fca"
+                    "database_id": "befbc073-a315-4144-a0d3-ff99d2732489"
                 }
             ],
             "vars": {
@@ -92,7 +98,7 @@
             },
             "kv_namespaces": [
                 {
-                    "binding": "ROCK_PAPER_CLANKER_OAUTH_KV",
+                    "binding": "OAUTH_KV",
                     "id": "e34c57add0cc42688ac0afb29c468669"
                 }
             ]

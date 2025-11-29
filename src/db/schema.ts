@@ -11,7 +11,9 @@ export const matches = sqliteTable("matches", {
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   player1Id: text("player1_id").notNull(),
+  player1Login: text("player1_login").notNull(),
   player2Id: text("player2_id").notNull(),
+  player2Login: text("player2_login").notNull(),
   status: text("status", { enum: matchStatusEnum }).notNull().default("active"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   completedAt: integer("completed_at", { mode: "timestamp" }),
