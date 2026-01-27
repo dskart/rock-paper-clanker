@@ -71,7 +71,7 @@ async function getHomePage(env: Env): Promise<Response> {
       isFirst: rank === 1,
       isSecond: rank === 2,
       isThird: rank === 3,
-      isHotStreak: entry.currentStreak >= 5,
+      isHotStreak: entry.bestStreak >= 5,
     };
   });
 

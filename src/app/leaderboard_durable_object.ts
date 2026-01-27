@@ -1,6 +1,6 @@
 export interface LeaderboardEntry {
   playerLogin: string;
-  currentStreak: number;
+  bestStreak: number;
   totalWins: number;
   totalMatches: number;
 }
@@ -84,45 +84,66 @@ export class LeaderboardDurableObject {
         FROM match_winners
       ),
       ranked_matches AS (
-        -- Rank each player's matches from most recent
+        -- Order each player's matches chronologically
         SELECT
           player_login,
           player_id,
           match_id,
           completed_at,
           is_win,
-          ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY completed_at DESC) AS match_rank
+          ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY completed_at ASC) AS match_rank
         FROM player_matches
       ),
-      streak_breaker AS (
-        -- Find the first loss (streak breaker) for each player
+      streak_groups AS (
+        -- Create groups: each loss increments the group counter
+        -- All consecutive wins share the same group_id
+        SELECT
+          player_login,
+          player_id,
+          is_win,
+          match_rank,
+          SUM(CASE WHEN is_win = 0 THEN 1 ELSE 0 END) OVER (
+            PARTITION BY player_id
+            ORDER BY match_rank
+          ) AS streak_group_id
+        FROM ranked_matches
+      ),
+      streak_lengths AS (
+        -- Count consecutive wins in each group
         SELECT
           player_id,
-          MIN(match_rank) AS first_loss_rank
-        FROM ranked_matches
-        WHERE is_win = 0
+          streak_group_id,
+          SUM(is_win) AS streak_length
+        FROM streak_groups
+        GROUP BY player_id, streak_group_id
+      ),
+      best_streaks AS (
+        -- Find the longest streak for each player
+        SELECT
+          player_id,
+          MAX(streak_length) AS best_streak
+        FROM streak_lengths
         GROUP BY player_id
       ),
-      player_streaks AS (
-        -- Calculate current streak: count wins before first loss
+      player_stats AS (
+        -- Calculate total stats for each player
         SELECT
-          rm.player_login,
-          rm.player_id,
-          COUNT(CASE WHEN rm.is_win = 1 AND (sb.first_loss_rank IS NULL OR rm.match_rank < sb.first_loss_rank) THEN 1 END) AS current_streak,
-          SUM(rm.is_win) AS total_wins,
+          player_login,
+          player_id,
+          SUM(is_win) AS total_wins,
           COUNT(*) AS total_matches
-        FROM ranked_matches rm
-        LEFT JOIN streak_breaker sb ON sb.player_id = rm.player_id
-        GROUP BY rm.player_login, rm.player_id
+        FROM ranked_matches
+        GROUP BY player_login, player_id
       )
       SELECT
-        player_login AS playerLogin,
-        current_streak AS currentStreak,
-        total_wins AS totalWins,
-        total_matches AS totalMatches
-      FROM player_streaks
-      WHERE current_streak > 0
-      ORDER BY current_streak DESC, total_matches ASC, total_wins DESC
+        ps.player_login AS playerLogin,
+        COALESCE(bs.best_streak, 0) AS bestStreak,
+        ps.total_wins AS totalWins,
+        ps.total_matches AS totalMatches
+      FROM player_stats ps
+      LEFT JOIN best_streaks bs ON bs.player_id = ps.player_id
+      WHERE COALESCE(bs.best_streak, 0) > 0
+      ORDER BY bestStreak DESC, total_matches ASC, total_wins DESC
       LIMIT 100
     `).all<LeaderboardEntry>();
 
