@@ -1,8 +1,8 @@
 export interface LeaderboardEntry {
   playerLogin: string;
-  wins: number;
-  losses: number;
-  winRate: number;
+  currentStreak: number;
+  totalWins: number;
+  totalMatches: number;
 }
 
 interface CachedLeaderboard {
@@ -44,53 +44,85 @@ export class LeaderboardDurableObject {
   private async fetchLeaderboard(): Promise<LeaderboardEntry[]> {
     const results = await this.env.DB.prepare(`
       WITH match_winners AS (
+        -- Determine winner of each completed match
         SELECT
-          m.id AS matchId,
+          m.id AS match_id,
           m.player1_id,
           m.player1_login,
           m.player2_id,
           m.player2_login,
-          SUM(CASE WHEN r.winner_id = m.player1_id THEN 1 ELSE 0 END) AS player1_rounds_won,
-          SUM(CASE WHEN r.winner_id = m.player2_id THEN 1 ELSE 0 END) AS player2_rounds_won
+          m.completed_at,
+          CASE
+            WHEN SUM(CASE WHEN r.winner_id = m.player1_id THEN 1 ELSE 0 END) >
+                 SUM(CASE WHEN r.winner_id = m.player2_id THEN 1 ELSE 0 END)
+            THEN m.player1_id
+            ELSE m.player2_id
+          END AS winner_id
         FROM matches m
         JOIN rounds r ON r.match_id = m.id
         WHERE m.status = 'completed' AND r.winner_id IS NOT NULL
-        GROUP BY m.id, m.player1_id, m.player1_login, m.player2_id, m.player2_login
+        GROUP BY m.id, m.player1_id, m.player1_login, m.player2_id, m.player2_login, m.completed_at
       ),
-      player_stats AS (
+      player_matches AS (
+        -- Flatten to one row per player per match with win/loss indicator
         SELECT
-          player1_login AS playerLogin,
-          SUM(CASE WHEN player1_rounds_won > player2_rounds_won THEN 1 ELSE 0 END) AS wins,
-          SUM(CASE WHEN player1_rounds_won < player2_rounds_won THEN 1 ELSE 0 END) AS losses
+          player1_login AS player_login,
+          player1_id AS player_id,
+          match_id,
+          completed_at,
+          CASE WHEN winner_id = player1_id THEN 1 ELSE 0 END AS is_win
         FROM match_winners
-        GROUP BY player1_login
 
         UNION ALL
 
         SELECT
-          player2_login AS playerLogin,
-          SUM(CASE WHEN player2_rounds_won > player1_rounds_won THEN 1 ELSE 0 END) AS wins,
-          SUM(CASE WHEN player2_rounds_won < player1_rounds_won THEN 1 ELSE 0 END) AS losses
+          player2_login AS player_login,
+          player2_id AS player_id,
+          match_id,
+          completed_at,
+          CASE WHEN winner_id = player2_id THEN 1 ELSE 0 END AS is_win
         FROM match_winners
-        GROUP BY player2_login
       ),
-      aggregated AS (
+      ranked_matches AS (
+        -- Rank each player's matches from most recent
         SELECT
-          playerLogin,
-          SUM(wins) AS wins,
-          SUM(losses) AS losses,
-          SUM(wins) + SUM(losses) AS totalGames
-        FROM player_stats
-        GROUP BY playerLogin
+          player_login,
+          player_id,
+          match_id,
+          completed_at,
+          is_win,
+          ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY completed_at DESC) AS match_rank
+        FROM player_matches
+      ),
+      streak_breaker AS (
+        -- Find the first loss (streak breaker) for each player
+        SELECT
+          player_id,
+          MIN(match_rank) AS first_loss_rank
+        FROM ranked_matches
+        WHERE is_win = 0
+        GROUP BY player_id
+      ),
+      player_streaks AS (
+        -- Calculate current streak: count wins before first loss
+        SELECT
+          rm.player_login,
+          rm.player_id,
+          COUNT(CASE WHEN rm.is_win = 1 AND (sb.first_loss_rank IS NULL OR rm.match_rank < sb.first_loss_rank) THEN 1 END) AS current_streak,
+          SUM(rm.is_win) AS total_wins,
+          COUNT(*) AS total_matches
+        FROM ranked_matches rm
+        LEFT JOIN streak_breaker sb ON sb.player_id = rm.player_id
+        GROUP BY rm.player_login, rm.player_id
       )
       SELECT
-        playerLogin,
-        wins,
-        losses,
-        ROUND(CAST(wins AS REAL) / totalGames * 100, 2) AS winRate
-      FROM aggregated
-      WHERE totalGames > 0
-      ORDER BY winRate DESC
+        player_login AS playerLogin,
+        current_streak AS currentStreak,
+        total_wins AS totalWins,
+        total_matches AS totalMatches
+      FROM player_streaks
+      WHERE current_streak > 0
+      ORDER BY current_streak DESC, total_wins DESC, total_matches DESC
       LIMIT 100
     `).all<LeaderboardEntry>();
 

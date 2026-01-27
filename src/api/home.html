@@ -13,7 +13,7 @@
   </head>
   <body class="bg-base-200 min-h-screen">
     <div class="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 class="text-4xl font-bold mb-8 text-center">Rock, Paper, Clanker Leaderboard</h1>
+      <h1 class="text-4xl font-bold mb-8 text-center">Rock, Paper, Clanker - Hot Streaks</h1>
 
       {{#hasLeaderboard}}
       <table class="table">
@@ -21,9 +21,9 @@
           <tr>
             <th class="w-10"></th>
             <th>Player</th>
-            <th>Wins</th>
-            <th>Losses</th>
-            <th>Win Rate</th>
+            <th>Streak</th>
+            <th>Total Wins</th>
+            <th>Matches</th>
           </tr>
         </thead>
         <tbody>
@@ -39,9 +39,9 @@
             <td class="text-center">{{rank}}</td>
             {{/isThird}}{{/isSecond}}{{/isFirst}}
             <th>{{playerLogin}}</th>
-            <td>{{wins}}</td>
-            <td>{{losses}}</td>
-            <td>{{winRate}}%</td>
+            <td>{{currentStreak}} 🔥</td>
+            <td>{{totalWins}}</td>
+            <td>{{totalMatches}}</td>
           </tr>
           {{/leaderboard}}
         </tbody>
