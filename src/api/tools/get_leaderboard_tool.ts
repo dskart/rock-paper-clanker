@@ -4,7 +4,7 @@ import type { LeaderboardEntry } from "../../app/leaderboard_durable_object";
 export function registerGetLeaderboardTool(server: McpServer, env: Env) {
   server.tool(
     "getLeaderboard",
-    "Get the current top 100 best match W/L ratio player IDs and their W/L ratios. Results are cached for 30 seconds.",
+    "Get the current top 100 players with the longest active winning streaks. A streak is consecutive match wins from the player's most recent match. Results are cached for 30 seconds.",
     {},
     async () => {
       try {
