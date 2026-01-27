@@ -4,8 +4,8 @@ A multiplayer MCP server that allows you to make your LLM play Rock, Paper, Scis
 
 ## Production
 
-- **UI**: <https://rock-paper-wrangler-production.raphael-vanhoffelen.workers.dev/>
-- **MCP Server**: <https://rock-paper-wrangler-production.raphael-vanhoffelen.workers.dev/mcp>
+- **UI**: <https://rock-paper-clanker-production.raphael-vanhoffelen.workers.dev/>
+- **MCP Server**: <https://rock-paper-clanker-production.raphael-vanhoffelen.workers.dev/mcp>
 
 ## Local Development
 
@@ -13,13 +13,6 @@ A multiplayer MCP server that allows you to make your LLM play Rock, Paper, Scis
 
 - Node.js 18+
 - A Cloudflare account
-- A GitHub OAuth application
-
-### Setup GitHub OAuth
-
-1. Create a GitHub OAuth App at <https://github.com/settings/developers>
-1. Set the Authorization callback URL to: `http://localhost:8787/callback`
-1. Copy your Client ID and Client Secret
 
 ### Installation
 
@@ -29,29 +22,19 @@ A multiplayer MCP server that allows you to make your LLM play Rock, Paper, Scis
 npm install
 ```
 
-1. Create a `.dev.vars` file in the root directory with your GitHub OAuth credentials and a cookie encryption key:
-
-```env
-ROCK_PAPER_CLANKER__GITHUB_CLIENT_ID=your_github_client_id
-ROCK_PAPER_CLANKER__GITHUB_CLIENT_SECRET=your_github_client_secret
-ROCK_PAPER_CLANKER__COOKIE_ENCRYPTION_KEY=your_cookie_encryption_key
-```
-
-Generate a secure cookie encryption key using:
+2. Generate code:
 
 ```bash
-openssl rand -hex 32
+npm run generate
 ```
 
-These secrets are automatically loaded in local development and accessed via `env.ROCK_PAPER_CLANKER__GITHUB_CLIENT_ID`, `env.ROCK_PAPER_CLANKER__GITHUB_CLIENT_SECRET`, and `env.ROCK_PAPER_CLANKER__COOKIE_ENCRYPTION_KEY` in your code.
-
-1. Run database migrations:
+3. Run database migrations:
 
 ```bash
 npm run db:migrate:local
 ```
 
-1. Start the development server:
+4. Start the development server:
 
 ```bash
 npm run dev
@@ -61,7 +44,15 @@ Visit <http://localhost:8787> to see the game homepage and leaderboard.
 
 ## Deployment
 
-### 1. Create Production Database
+**Note:** GitHub OAuth is only required for production deployment. In dev mode, authentication is not needed and you can skip OAuth setup.
+
+### 1. Setup GitHub OAuth (Production Only)
+
+1. Create a GitHub OAuth App at <https://github.com/settings/developers>
+2. Set the Authorization callback URL to your production URL: `https://rock-paper-wrangler.<your-account>.workers.dev/callback`
+3. Copy your Client ID and Client Secret (you'll need these in step 5)
+
+### 2. Create Production Database
 
 ```bash
 npx wrangler d1 create rock-paper-wrangler-db
@@ -69,13 +60,13 @@ npx wrangler d1 create rock-paper-wrangler-db
 
 Copy the database ID and update `wrangler.jsonc` under `env.production.d1_databases[0].database_id`.
 
-### 2. Run Migrations
+### 3. Run Migrations
 
 ```bash
 npm run db:migrate:prod
 ```
 
-### 3. Create Production KV Namespace
+### 4. Create Production KV Namespace
 
 ```bash
 npx wrangler kv namespace create OAUTH_KV --env production
@@ -83,9 +74,11 @@ npx wrangler kv namespace create OAUTH_KV --env production
 
 Copy the ID and update `wrangler.jsonc` under `env.production.kv_namespaces[0].id`.
 
-### 4. Set Production Secrets
+### 5. Set Production Secrets
 
 Production secrets are stored securely in Cloudflare and accessed the same way as local secrets (via `env.ROCK_PAPER_CLANKER__GITHUB_CLIENT_ID` etc).
+
+Set your GitHub OAuth credentials (from step 1) and a cookie encryption key:
 
 ```bash
 npx wrangler secret put ROCK_PAPER_CLANKER__GITHUB_CLIENT_ID --env production
@@ -93,9 +86,13 @@ npx wrangler secret put ROCK_PAPER_CLANKER__GITHUB_CLIENT_SECRET --env productio
 npx wrangler secret put ROCK_PAPER_CLANKER__COOKIE_ENCRYPTION_KEY --env production
 ```
 
-You'll be prompted to enter the values for each secret.
+You'll be prompted to enter the values for each secret. Generate a secure cookie encryption key using:
 
-### 5. Deploy
+```bash
+openssl rand -hex 32
+```
+
+### 6. Deploy
 
 ```bash
 npm run deploy:prod
@@ -114,7 +111,7 @@ Add this configuration to your Claude Desktop config (Settings > Developer > Edi
       "command": "npx",
       "args": [
         "mcp-remote",
-        "https://rock-paper-wrangler.<your-account>.workers.dev/mcp"
+        "https://rock-paper-clanker.<your-account>.workers.dev/mcp"
       ]
     }
   }
