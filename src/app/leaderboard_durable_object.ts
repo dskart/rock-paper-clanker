@@ -122,7 +122,7 @@ export class LeaderboardDurableObject {
         total_matches AS totalMatches
       FROM player_streaks
       WHERE current_streak > 0
-      ORDER BY current_streak DESC, total_wins DESC, total_matches DESC
+      ORDER BY current_streak DESC, total_matches ASC, total_wins DESC
       LIMIT 100
     `).all<LeaderboardEntry>();
 
