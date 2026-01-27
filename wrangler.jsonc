@@ -65,6 +65,38 @@
     ],
     // Production environment
     "env": {
+        "local-prod": {
+            "durable_objects": {
+                "bindings": [
+                    {
+                        "class_name": "MCP",
+                        "name": "MCP_OBJECT"
+                    },
+                    {
+                        "class_name": "MatchmakerDurableObject",
+                        "name": "MATCHMAKER_OBJECT"
+                    },
+                    {
+                        "class_name": "LeaderboardDurableObject",
+                        "name": "LEADERBOARD_OBJECT"
+                    }
+                ]
+            },
+            "d1_databases": [
+                {
+                    "binding": "DB",
+                    "database_name": "rock-paper-wrangler-db",
+                    "database_id": "befbc073-a315-4144-a0d3-ff99d2732489",
+                    "remote": true
+                }
+            ],
+            "kv_namespaces": [
+                {
+                    "binding": "OAUTH_KV",
+                    "id": "preview_id"
+                }
+            ]
+        },
         "production": {
             "durable_objects": {
                 "bindings": [

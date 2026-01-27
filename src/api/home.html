@@ -1,5 +1,5 @@
 <!doctype html>
-<html data-theme="dark">
+<html lang="en">
   <head>
     <title>Rock, Paper, Clanker</title>
     <meta charset="UTF-8" />
@@ -13,42 +13,45 @@
   </head>
   <body class="bg-base-200 min-h-screen">
     <div class="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 class="text-4xl font-bold mb-8 text-center">Rock, Paper, Clanker - Hot Streaks</h1>
+      <h1 class="text-4xl font-bold mb-8 text-center">Rock, Paper, Clanker</h1>
+      <!-- Tabs -->
+      <div class="tabs tabs-lift">
+        <label class="tab">
+          <input type="radio" name="leaderboard_tabs" checked="checked" />
+          🏆 Best Streaks
+        </label>
+        <div class="tab-content bg-base-100 border-base-300 p-6">
+          {{#hasBestStreaks}}
+          {{#bestStreaksLeaderboard}}
+          {{> leaderboard_table}}
+          {{/bestStreaksLeaderboard}}
+          {{/hasBestStreaks}} {{^hasBestStreaks}}
+          <div class="text-center p-6">No leaderboard data available</div>
+          {{/hasBestStreaks}}
+        </div>
 
-      {{#hasLeaderboard}}
-      <table class="table">
-        <thead>
-          <tr>
-            <th class="w-10"></th>
-            <th>Player</th>
-            <th class="text-center">Streak</th>
-            <th class="text-center">Total Wins</th>
-            <th class="text-center">Matches</th>
-          </tr>
-        </thead>
-        <tbody>
-          {{#leaderboard}}
-          <tr>
-            {{#isFirst}}
-            <th>🥇</th>
-            {{/isFirst}} {{#isSecond}}
-            <th>🥈</th>
-            {{/isSecond}} {{#isThird}}
-            <th>🥉</th>
-            {{/isThird}} {{^isFirst}}{{^isSecond}}{{^isThird}}
-            <td class="text-center">{{rank}}</td>
-            {{/isThird}}{{/isSecond}}{{/isFirst}}
-            <th>{{playerLogin}}</th>
-            <td class="text-center">{{bestStreak}}{{#isHotStreak}} 🔥{{/isHotStreak}}</td>
-            <td class="text-center">{{totalWins}}</td>
-            <td class="text-center">{{totalMatches}}</td>
-          </tr>
-          {{/leaderboard}}
-        </tbody>
-      </table>
-      {{/hasLeaderboard}} {{^hasLeaderboard}}
-      <div class="text-center">No leaderboard data available</div>
-      {{/hasLeaderboard}}
+        <label class="tab">
+          <input type="radio" name="leaderboard_tabs" />
+          🔥 Current Streaks
+        </label>
+        <div class="tab-content bg-base-100 border-base-300 p-6">
+          {{#hasCurrentStreaks}}
+          {{#currentStreaksLeaderboard}}
+          {{> leaderboard_table}}
+          {{/currentStreaksLeaderboard}}
+          {{/hasCurrentStreaks}} {{^hasCurrentStreaks}}
+          <div class="text-center p-6">No leaderboard data available</div>
+          {{/hasCurrentStreaks}}
+        </div>
+
+        <label class="tab">
+          <input type="radio" name="leaderboard_tabs" />
+          🔌 Setup
+        </label>
+        <div class="tab-content bg-base-100 border-base-300 p-6">
+          {{> setup_instructions}}
+        </div>
+      </div>
 
       <div class="text-center mt-8 text-sm opacity-50">Last updated: {{time}}</div>
     </div>

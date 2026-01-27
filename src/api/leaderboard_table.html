@@ -1,0 +1,32 @@
+<div class="overflow-x-auto">
+  <table class="table">
+    <thead>
+      <tr>
+        <th class="w-10"></th>
+        <th>Player</th>
+        <th class="text-center">{{streakLabel}}</th>
+        <th class="text-center">Total Wins</th>
+        <th class="text-center">Matches</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#players}}
+      <tr>
+        {{#isFirst}}
+        <th>🥇</th>
+        {{/isFirst}} {{#isSecond}}
+        <th>🥈</th>
+        {{/isSecond}} {{#isThird}}
+        <th>🥉</th>
+        {{/isThird}} {{^isFirst}}{{^isSecond}}{{^isThird}}
+        <td class="text-center">{{rank}}</td>
+        {{/isThird}}{{/isSecond}}{{/isFirst}}
+        <th>{{playerLogin}}</th>
+        <td class="text-center">{{streakValue}}{{#isHotStreak}} 🔥{{/isHotStreak}}</td>
+        <td class="text-center">{{totalWins}}</td>
+        <td class="text-center">{{totalMatches}}</td>
+      </tr>
+      {{/players}}
+    </tbody>
+  </table>
+</div>

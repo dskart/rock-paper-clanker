@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "wrangler dev",
+    "dev:local-prod": "wrangler dev --env local-prod",
     "start": "wrangler dev",
     "deploy:prod": "wrangler deploy --env production",
     "format": "biome format --write",
@@ -24,8 +25,9 @@
   },
   "dependencies": {
     "@cloudflare/workers-oauth-provider": "^0.1.0",
-    "@modelcontextprotocol/sdk": "1.20.2",
-    "agents": "^0.2.19",
+    "@modelcontextprotocol/sdk": "^1.25.3",
+    "agents": "^0.3.6",
+    "ai": "^6.0.57",
     "drizzle-kit": "^0.31.6",
     "drizzle-orm": "^0.44.7",
     "hono": "^4.10.7",
@@ -43,5 +45,8 @@
     "tailwindcss": "^4.1.17",
     "typescript": "5.9.3",
     "wrangler": "^4.46.0"
+  },
+  "overrides": {
+    "@modelcontextprotocol/sdk": "^1.25.3"
   }
 }

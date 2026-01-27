@@ -1,11 +1,15 @@
 import OAuthProvider from "@cloudflare/workers-oauth-provider";
 import type { RouterType } from "itty-router";
 import Mustache from "mustache";
-import type { LeaderboardEntry } from "../app/leaderboard_durable_object";
+import type { CombinedLeaderboard } from "../app/leaderboard_durable_object";
 import { GitHubHandler } from "./auth/github_handler";
 import homeTemplate from "./home.html";
+import leaderboardTablePartial from "./leaderboard_table.html";
+import setupInstructionsPartial from "./setup_instructions.html";
 import { MCP } from "./mcp";
 import outputCss from "./public/static/output.css";
+
+const MCP_SERVER_URL = "https://rock-paper-clanker.raphaelvanhoffelen.com/mcp";
 
 const STATIC_FILES: Record<string, { content: string; contentType: string }> = {
   "output.css": { content: outputCss, contentType: "text/css" },
@@ -56,14 +60,10 @@ async function getHomePage(env: Env): Promise<Response> {
   const id = env.LEADERBOARD_OBJECT.idFromName("global-leaderboard");
   const stub = env.LEADERBOARD_OBJECT.get(id);
 
-  const response = await stub.fetch(
-    new Request("https://leaderboard.internal/get", {
-      method: "GET",
-    }),
-  );
+  const leaderboardResponse = await stub.fetch(new Request("https://leaderboard.internal/get"));
+  const leaderboardResult = (await leaderboardResponse.json()) as CombinedLeaderboard;
 
-  const leaderboard = (await response.json()) as LeaderboardEntry[];
-  const leaderboardWithRank = leaderboard.map((entry, index) => {
+  const bestStreaksWithRank = leaderboardResult.bestStreaks.map((entry, index) => {
     const rank = index + 1;
     return {
       ...entry,
@@ -72,15 +72,47 @@ async function getHomePage(env: Env): Promise<Response> {
       isSecond: rank === 2,
       isThird: rank === 3,
       isHotStreak: entry.bestStreak >= 5,
+      streakValue: entry.bestStreak,
     };
   });
 
+  const currentStreaksWithRank = leaderboardResult.currentStreaks.map((entry, index) => {
+    const rank = index + 1;
+    return {
+      ...entry,
+      rank,
+      isFirst: rank === 1,
+      isSecond: rank === 2,
+      isThird: rank === 3,
+      isHotStreak: entry.currentStreak >= 5,
+      streakValue: entry.currentStreak,
+    };
+  });
+
+  const lastUpdated = new Date(leaderboardResult.timestamp).toLocaleString();
+
   return new Response(
-    Mustache.render(homeTemplate, {
-      leaderboard: leaderboardWithRank,
-      hasLeaderboard: leaderboardWithRank.length > 0,
-      time: new Date().toLocaleString(),
-    }),
+    Mustache.render(
+      homeTemplate,
+      {
+        hasBestStreaks: bestStreaksWithRank.length > 0,
+        hasCurrentStreaks: currentStreaksWithRank.length > 0,
+        time: lastUpdated,
+        mcpUrl: MCP_SERVER_URL,
+        bestStreaksLeaderboard: {
+          players: bestStreaksWithRank,
+          streakLabel: "Best Streak",
+        },
+        currentStreaksLeaderboard: {
+          players: currentStreaksWithRank,
+          streakLabel: "Current Streak",
+        },
+      },
+      {
+        leaderboard_table: leaderboardTablePartial,
+        setup_instructions: setupInstructionsPartial,
+      },
+    ),
     {
       headers: { "Content-Type": "text/html" },
     },
