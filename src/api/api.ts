@@ -5,9 +5,9 @@ import type { CombinedLeaderboard } from "../app/leaderboard_durable_object";
 import { GitHubHandler } from "./auth/github_handler";
 import homeTemplate from "./home.html";
 import leaderboardTablePartial from "./leaderboard_table.html";
-import setupInstructionsPartial from "./setup_instructions.html";
 import { MCP } from "./mcp";
 import outputCss from "./public/static/output.css";
+import setupInstructionsPartial from "./setup_instructions.html";
 
 const MCP_SERVER_URL = "https://rock-paper-clanker.raphaelvanhoffelen.com/mcp";
 

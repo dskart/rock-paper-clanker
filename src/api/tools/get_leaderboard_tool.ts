@@ -1,5 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { LeaderboardEntry } from "../../app/leaderboard_durable_object";
+import type { CombinedLeaderboard } from "../../app/leaderboard_durable_object";
 
 export function registerGetLeaderboardTool(server: McpServer, env: Env) {
   server.tool(
@@ -17,7 +17,7 @@ export function registerGetLeaderboardTool(server: McpServer, env: Env) {
           }),
         );
 
-        const data = (await response.json()) as LeaderboardEntry[];
+        const data = (await response.json()) as CombinedLeaderboard;
 
         return {
           content: [
