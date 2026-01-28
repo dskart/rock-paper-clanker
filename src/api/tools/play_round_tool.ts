@@ -5,12 +5,14 @@ import { AppServices } from "../../app/services";
 const choiceSchema = z.enum(["rock", "paper", "scissors"]);
 
 export function registerPlayRoundTool(server: McpServer, env: Env, getUserId: () => string) {
-  server.tool(
+  server.registerTool(
     "playRound",
-    "Play a round of rock, paper, scissors in a match. After a match is found, use this to play each round. Best of 3 rounds wins the match.",
     {
-      matchId: z.string().describe("The match ID from findMatch"),
-      choice: choiceSchema.describe("Your choice for this round"),
+      description: "Play a round of rock, paper, scissors in a match. After a match is found, use this to play each round. Best of 3 rounds wins the match.",
+      inputSchema: {
+        matchId: z.string().describe("The match ID from findMatch"),
+        choice: choiceSchema.describe("Your choice for this round"),
+      },
     },
     async ({ matchId, choice }) => {
       try {

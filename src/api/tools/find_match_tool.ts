@@ -7,7 +7,12 @@ export function registerFindMatchTool(
   getUserId: () => string,
   getUserLogin: () => string,
 ) {
-  server.tool("findMatch", "Find a match for the player", {}, async () => {
+  server.registerTool(
+    "findMatch",
+    {
+      description: "Find a match for the player",
+    },
+    async () => {
     try {
       const playerId = getUserId();
       const playerLogin = getUserLogin();

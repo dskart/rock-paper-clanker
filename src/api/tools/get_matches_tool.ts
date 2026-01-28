@@ -2,7 +2,12 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { AppServices } from "../../app/services";
 
 export function registerGetMatchesTool(server: McpServer, env: Env) {
-  server.tool("getMatches", "Get all matches. ONLY USE FOR DEBUGGING.", {}, async () => {
+  server.registerTool(
+    "getMatches",
+    {
+      description: "Get all matches. ONLY USE FOR DEBUGGING.",
+    },
+    async () => {
     try {
       const services = AppServices.fromEnv(env);
       const matches = await services.matchService.getMatches();

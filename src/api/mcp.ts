@@ -14,6 +14,7 @@ export class MCP extends McpAgent<Env, Record<string, never>, Props> {
   server = new McpServer({
     name: "Rock, Paper, Clanker",
     version: "1.0.0",
+    description: "Play Rock Paper Scissors against other people through your AI assistant and compete on the leaderboard",
   });
 
   async init() {

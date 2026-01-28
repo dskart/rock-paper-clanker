@@ -3,11 +3,13 @@ import { z } from "zod";
 import { AppServices } from "../../app/services";
 
 export function registerGetMatchRoundsTool(server: McpServer, env: Env) {
-  server.tool(
+  server.registerTool(
     "getMatchRounds",
-    "Get all round results for a specific match. ONLY USE FOR DEBUGGING.",
     {
-      matchId: z.string().describe("The match ID"),
+      description: "Get all round results for a specific match. ONLY USE FOR DEBUGGING.",
+      inputSchema: {
+        matchId: z.string().describe("The match ID"),
+      },
     },
     async ({ matchId }) => {
       try {

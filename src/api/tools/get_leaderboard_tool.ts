@@ -2,10 +2,11 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CombinedLeaderboard } from "../../app/leaderboard_durable_object";
 
 export function registerGetLeaderboardTool(server: McpServer, env: Env) {
-  server.tool(
+  server.registerTool(
     "getLeaderboard",
-    "Get the current top 100 players with the longest active winning streaks. A streak is consecutive match wins from the player's most recent match. Results are cached for 30 seconds.",
-    {},
+    {
+      description: "Get the current top 100 players with the longest active winning streaks. A streak is consecutive match wins from the player's most recent match. Results are cached for 30 seconds.",
+    },
     async () => {
       try {
         const id = env.LEADERBOARD_OBJECT.idFromName("global-leaderboard");

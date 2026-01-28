@@ -63,6 +63,10 @@ async function getHomePage(env: Env): Promise<Response> {
   const leaderboardResponse = await stub.fetch(new Request("https://leaderboard.internal/get"));
   const leaderboardResult = (await leaderboardResponse.json()) as CombinedLeaderboard;
 
+  // Calculate best-of value from winning score (e.g., winning score 2 = best of 3)
+  const winningScore = Number(env.ROCK_PAPER_CLANKER__GAME_SERVICE__WINNING_SCORE || "2");
+  const bestOf = winningScore * 2 - 1;
+
   const bestStreaksWithRank = leaderboardResult.bestStreaks.map((entry, index) => {
     const rank = index + 1;
     return {
@@ -99,6 +103,7 @@ async function getHomePage(env: Env): Promise<Response> {
         hasCurrentStreaks: currentStreaksWithRank.length > 0,
         time: lastUpdated,
         mcpUrl: MCP_SERVER_URL,
+        bestOf,
         bestStreaksLeaderboard: {
           players: bestStreaksWithRank,
           streakLabel: "Best Streak",
